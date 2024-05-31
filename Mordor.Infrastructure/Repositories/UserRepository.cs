@@ -1,19 +1,21 @@
 using Dapper;
+using Microsoft.Data.SqlClient;
 using Mordor.Domain.Entities;
 using Mordor.Domain.Interfaces;
 using Mordor.Infrastructure.Data;
+using Microsoft.Extensions.Logging;
 
 namespace Mordor.Infrastructure.Repositories
 {
 	public class UserRepository : IUserRepository
 	{
-		private readonly DapperDbContext _context;
 		private readonly ConnectionManager _connectionManager;
+		private readonly CreateNewUser _createNewUser;
 
-		public UserRepository(DapperDbContext context, ConnectionManager connectionManager)
+		public UserRepository(ConnectionManager connectionManager, CreateNewUser createNewUser)
 		{
-			_context = context;
 			_connectionManager = connectionManager;
+			_createNewUser = createNewUser;
 		}
 
 		public async Task<AppUser> GetUserById(Guid userId)
@@ -31,23 +33,31 @@ namespace Mordor.Infrastructure.Repositories
 
 		public async Task CreateUser(AppUser user)
 		{
-
-			var sql = "INSERT INTO Users (UserId, UserName, Password) VALUES (@UserId, @UserName, @Password)";
-			await _connectionManager.Connection.ExecuteAsync(sql, user);
+			await _createNewUser.ExecuteCreateNewUser(user);
 		}
 
-		public async Task UpdateUser(AppUser user)
-		{
+        public Task UpdateUser(AppUser user)
+        {
+            throw new NotImplementedException();
+        }
 
-			var sql = "UPDATE Users SET UserName = @UserName, Password = @Password WHERE UserId = @UserId";
-			await _connectionManager.Connection.ExecuteAsync(sql, user);
-		}
+        public Task DeleteUser(Guid id)
+        {
+            throw new NotImplementedException();
+        }
 
-		public async Task DeleteUser(Guid id)
-		{
+        // public async Task UpdateUser(AppUser user)
+        // {
 
-			var sql = "DELETE FROM Users WHERE UserId = @UserId";
-			await _connectionManager.Connection.ExecuteAsync(sql, new { Id = id });
-		}
-	}
+        // 	var sql = "UPDATE Users SET UserName = @UserName, Password = @Password WHERE UserId = @UserId";
+        // 	await _connectionManager.Connection.ExecuteAsync(sql, user);
+        // }
+
+        // public async Task DeleteUser(Guid id)
+        // {
+
+        // 	var sql = "DELETE FROM Users WHERE UserId = @UserId";
+        // 	await _connectionManager.Connection.ExecuteAsync(sql, new { Id = id });
+        // }
+    }
 }

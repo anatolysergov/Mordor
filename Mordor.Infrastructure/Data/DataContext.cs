@@ -1,13 +1,21 @@
+using System.Data;
+using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
-using Mordor.Domain.Entities;
 
 namespace Mordor.Infrastructure.Data;
 
 public class DataContext : DbContext
 {
-	public DataContext(DbContextOptions<DataContext> options) : base(options)
-	{
-	}
+	private readonly string _connectionString;
 
-	public DbSet<AppUser> Users { get; set; }
+		public DataContext(IConfiguration configuration)
+		{
+			_connectionString = configuration.GetConnectionString("DefaultConnection");
+		}
+
+		public IDbConnection CreateConnection()
+		{
+			return new SqlConnection(_connectionString);
+		}
 }

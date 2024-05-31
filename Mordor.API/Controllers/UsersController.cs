@@ -10,10 +10,12 @@ namespace Mordor.Api.Controllers
 	public class UsersController : ControllerBase
 	{
 		private readonly IUserRepository _userRepository;
+		private readonly ILogger<UsersController> Logger;
 
-		public UsersController(IUserRepository userRepository)
+		public UsersController(IUserRepository userRepository, ILogger<UsersController> logger)
 		{
 			_userRepository = userRepository;
+			Logger = logger;
 		}
 
 		[HttpGet("username/{username}")]
@@ -50,7 +52,7 @@ namespace Mordor.Api.Controllers
 		[HttpPut("{id}")]
 		public async Task<IActionResult> UpdateUser(Guid id, AppUser user)
 		{
-			if (id != user.UserId)
+			if (id.ToString() != user.UserId)
 			{
 				return BadRequest();
 			}
@@ -66,29 +68,49 @@ namespace Mordor.Api.Controllers
 		}
 		
 		[HttpPost]
-		public async Task<IActionResult> CreateNewUser([FromBody] UserCreateNewRequest userCreateNewRequest)
+		public async Task<IActionResult> RegisterNewUser([FromBody] UserCreateNewRequest userCreateNewRequest)
 		{
 			if (userCreateNewRequest == null)
 			{
-				return BadRequest();
+				return BadRequest("Request body is null.");
 			}
-			
-			var foundUser = _userRepository.GetUserByUsername(userCreateNewRequest.UserName);
-			
-			if (foundUser != null)
+
+			try
 			{
-				return Conflict();
+				var foundUser = await _userRepository.GetUserByUsername(userCreateNewRequest.UserName);
+
+				if (foundUser != null)
+				{
+					return Conflict("A user with the same username already exists.");
+				}
+
+				var user = new AppUser
+				{
+					UserName = userCreateNewRequest.UserName,
+					Password = userCreateNewRequest.Password,
+					UserId = Guid.NewGuid().ToString(),
+					FirstName = userCreateNewRequest.FirstName,
+					LastName = userCreateNewRequest.LastName,
+					Email = userCreateNewRequest.Email,
+					IsActive = false,
+					UserRoleId = 1,
+					CompanyName = userCreateNewRequest.CompanyName,
+					CreatedDate = DateTime.Now,
+					DateModified = DateTime.Now,
+					LastLoggedIn = DateTime.Now,
+				};
+
+				await _userRepository.CreateUser(user);
+				return Ok(user);
 			}
-			
-			var user = new AppUser
+			catch (Exception ex)
 			{
-				UserName = userCreateNewRequest.UserName,
-				Password = userCreateNewRequest.Password,
-				UserId = Guid.NewGuid()
-			};
-			
-			await _userRepository.CreateUser(user);
-			return CreatedAtAction("GetUser", new { id = user.UserId }, user);
+				// Log the exception (ex)
+				Logger.LogError(ex, "An error occurred while creating the user.");
+				return StatusCode(500, "An error occurred while creating the user.");
+			}
 		}
+
+
 	}
 }

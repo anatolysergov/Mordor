@@ -4,6 +4,7 @@ using Mordor.Infrastructure.Repositories;
 using Mordor.Infrastructure.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Mordor.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,7 +16,11 @@ builder.Services.AddSingleton<DapperDbContext>(provider =>
 });
 
 // Register UserRepository as a scoped service
+builder.Services.AddScoped<CreateNewUser>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ConnectionManager>();
+
+builder.Services.AddLogging();
 
 // Add controllers
 builder.Services.AddControllers();
